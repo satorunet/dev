@@ -1,10 +1,73 @@
 <html>
+<body>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<div class="code">
-&lt;hoge&gt;
-</div>
+<h1>JS上でescapeカンマ「＆＃４４；」を判別できない</h1>
+HTMLソース上はescape表現式カンマ（<b>＆#44;</b>）と、普通のカンマ（<b>,</b>）をJS上で判別する方法がない。<br>
+対策として、自身をjsonを再取得し、正規表現にて該当部分を参照する方法でしか表現できなかった。
+<hr>
+<div>ソース元のテキスト（上が＆#44;、下が普通のカンマ）</div>
+<textarea class="code" cols=30 rows=5>
+&#44;
+,
+</textarea>
+
+<hr>
+
+<dd><div>※この時点でブラウザ上は既にエスケープ処理済みかも</div></dd>
+
+<style>
+.ok{color:blue;font-weight:bold}
+.ng{color:red;font-weight:bold}
+dd{color:#999}
+.code{background:#ffdddd}
+</style>
+
+<div>jquery:テキストエリアにval。判別できない：<span class=ng>×</span></div>
+<textarea class=tt cols=30 rows=5></textarea>
+
+<div>pureJS:innerHTMLで value指定してもダメ<span class=ng>×</span></div>
+<textarea class="inner_tt" cols=30 rows=5></textarea>
+
+<div>escape処理してもアカン<span class=ng>×</span></div>
+<textarea class="escape_tt" cols=30 rows=5></textarea>
+
+<hr>
+
+<div>自身のhtmlをjsonで取得<span class=ok>◎</span></div>
+<textarea class="all_html" cols=30 rows=5></textarea>
+<dd><div>※TEXT状態：この時点ではまだescape処理されてない</div></dd>
+
+<div>html内の要素を取得<span class=ng>×</span></div>
+<textarea class="file_val_tt" cols=30 rows=5></textarea>
+<dd><div>※取得したテキストをHTML要素として解釈した時点でescape処理されてしまう</div></dd>
+
+<div>正規表現で取得<span class=ok>◎</span></div>
+<textarea class="regexp_tt" cols=30 rows=5></textarea>
+<dd><div>※(res.match(/<[^<]+class="code"[^>]+>(?:\n|)([^<]+)/)[1])でやっといけた。<br>
+（意：classがcodeのタグに囲まれた値。）
+
+</div></dd>
+
+
 <script>
+document.querySelector(".inner_tt").value = document.querySelector(".code").innerHTML;
+
 $(function(){
-  alert($(".code").html());
+  $(".tt").val($(".code").text());
+
+
+  $(".escape_tt").val(escape(document.querySelector(".code").innerHTML));
+
+	$.ajax({
+		url : "./index.html",
+		dataType : "text",
+	}).done(function(res){
+		$(".all_html").val(res); //この時点ではok
+		$(".file_val_tt").val(($("<div>" + res + "</div>").find(".code").val()));
+		$(".regexp_tt").val((res.match(/<[^<]+class="code"[^>]+>(?:\n|)([^<]+)/)[1]))
+
+	})
 })
 </script>
+</body>
+</html>
